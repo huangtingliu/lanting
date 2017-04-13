@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mappers xmlns="http://www.weimingfj.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://itest.56913.com:20080/xsd/mappers.xsd">
+<!-- 用户信息 -->
+<!-- 获取认证信息 -->
+	<mapper id="selectAllProv">
+	  <sql key="selectAllProv" operator="select" resultType="map" >
+	
+		select user_auth_status,company_auth_status,company_id from sys_user_tab where user_id=#{user_id} 	
+
+	</sql>
+	</mapper>
+
+<!-- 获取用户审核信息 -->
+<mapper id="msginstallTab">
+	<sql key="msginstallTab" operator="select" resultType="map" >  
+    select * from (select user_auth_status,company_auth_status,user_id,user_name real_name_ur,id_no  id_no_ur,addr id_card_addr_ur,company company_name_cr,con_addr company_addr_cr  from sys_user_tab  where user_id='$_CRU_USER_ID_$') u LEFT JOIN    
+(select  real_name,id_card_addr,id_no,id_card_back,id_card_front,user_id from user_auth_record_tab where type=1 and user_id='$_CRU_USER_ID_$'  order by  apply_date desc limit 0,1 ) p on u.user_id=p.user_id left join  
+( select  company_name,registration_number,legal_person,trading_photo_path,business_license_number,business_license_number_path,store_photo_path,user_id from user_auth_record_tab where type=2 and user_id='$_CRU_USER_ID_$'  order by  apply_date desc limit 0,1   ) c on c.user_id=u.user_id 
+  </sql>
+</mapper>
+
+<!-- 获取用户个人认证信息 -->
+<mapper id="getUserAuditMsg">
+	<sql key="getUserAuditMsg" operator="select" resultType="map" >
+			select a.*,sut.user_auth_status,sut.user_name,sut.tel,sut.id_no id_no_text from  sys_user_tab sut LEFT JOIN  auth_personal_tab a on a.user_id=sut.user_id   WHERE sut.user_id='$_CRU_USER_ID_$' order by a.apply_date  desc 
+   </sql>
+</mapper>
+
+<!-- 获取用户企业认证信息  -->
+<mapper id="getCompanyAuditMsg">
+	<sql key="getCompanyAuditMsg" operator="select" resultType="map" >
+				select sut.company,sut.company_id,sut.company_auth_status,act.*,bat.full_text 
+FROM  
+	sys_user_tab sut 
+LEFT JOIN auth_company_tab act ON act.user_id = sut.user_id 
+left join base_area_tab bat on act.area_code=bat.code where sut.user_id='$_CRU_USER_ID_$'
+order by act.apply_date  desc  
+   </sql>
+</mapper>
+
+<!-- 车源 ：上架下架 -->
+<mapper id="setTruckIsValid">
+	<sql key="setTruckIsValid"  operator="execute">
+		update yl_tab set valid=#{VALID} 
+			<isEqual property="VALID" compareValue="1">  
+									,START_DATE=now()
+									,END_DATE=DATE_ADD(now(),INTERVAL 3 DAY),
+										ADD_TIME=NOW()
+							</isEqual>
+where user_id=#{USER_ID} and yl_id=#{TRUCK_ID} 
+   </sql>
+</mapper>
+
+<!-- 删除车源 -->
+<mapper id="delYLorCargo">
+	<sql key="delYLorCargo"  operator="execute">
+					update 
+<isNotEmpty property="type">  
+	<isEqual property="type" compareValue="0">  
+									yl_tab set IS_DELETE='Y' where yl_id=#{id}
+							</isEqual>
+			<isEqual property="type" compareValue="1">  
+								 sys_cargo_tab set IS_DELETE='Y' where SEQ=#{id} 
+							</isEqual>
+        </isNotEmpty>
+   </sql>
+</mapper> 
+
+
+<!-- 我的货源 -->
+<mapper id="loadMyCargoInfo">
+	<sql key="loadMyCargoInfo" operator="select" resultType="autoPaging" >
+        select DATE_FORMAT(c.create_time,"%Y-%m-%d %T") create_time1, c.*,c.pub_name MEMBER_NAME,( select  count(1) from collect where member_id='$_CRU_USER_ID_$' and collect_type=1 and collect_id=c.SEQ ) as TYPE  from (
+SELECT * from sys_cargo_tab c where 1=1 and is_delete='N' and c.USER_ID= '$_CRU_USER_ID_$' and is_show=#{is_show}  
+<isNotEmpty property="CARGO_SOURCE">  
+  	and c.S_AREA=#{CARGO_SOURCE}
+	</isNotEmpty>
+	<isNotEmpty property="CARGO_DEST">  
+  	and c.T_AREA=#{CARGO_DEST} 
+	</isNotEmpty>
+ ORDER BY c.CREATE_TIME desc 
+) c 
+    </sql>
+</mapper>
+
+<!-- 我的车源 -->
+<mapper id="loadMyTruckInfo">
+	<sql key="loadMyTruckInfo" operator="select" resultType="autoPaging" >
+       select DATE_FORMAT(c.ADD_TIME,"%Y-%m-%d %T") pub_date1,c.*,c.user_name MEMBER_NAME,(case  when c.end_date >= now() then 1 else 2 end) time_valid  from (
+SELECT * from yl_tab c where 1=1 and c.is_delete='N' and c.USER_ID= '$_CRU_USER_ID_$' and valid=#{valid} 
+<isNotEmpty property="TRUCK_SOURCE">  
+  	and c.yl_source=#{TRUCK_SOURCE}
+	</isNotEmpty>
+	<isNotEmpty property="TRUCK_DEST">  
+  	and c.destination=#{TRUCK_DEST}
+	</isNotEmpty>
+ORDER BY c.add_time desc 
+) c  
+
+</sql>
+</mapper>
+
+<!-- 获取在线车源详情 -->
+
+<mapper id="getLineTruckInfoById">
+	<sql key="getLineTruckInfoById" operator="select" resultType="map">
+		SELECT  
+	aa.*, cc.company_name,
+if(aa.loc_way_from='2',aa.CONTACTS,if(bb.truck_id is null,ifnull(d.contact,aa.CONTACTS),aa.CONTACTS))  CONTACTS_NAME, 
+if(aa.loc_way_from='2',aa.CONTACT_TEL,if(bb.truck_id is null,ifnull(d.contact_tel,aa.CONTACT_TEL),aa.CONTACT_TEL))  contacts_tel 
+FROM 
+	( 
+		SELECT 
+			DATE_FORMAT( 
+				t.last_loc_time, 
+				'%Y-%m-%d %T' 
+			) LAST_LOC_TIME_FORMAT, 
+			t.* 
+		FROM 
+			sys_truck_tab t 
+		WHERE 
+			1 = 1 and t.truck_id = #{TRUCK_ID} 
+		) aa  left join truck_park_tab d on d.truck_plate=aa.TRUCK_PLATE  
+left join (select a.truck_id from user_trucks_tab a   
+inner join (select user_id from sys_user_tab where is_del='N' and effect=0) b on a.USER_ID=b.user_id  
+GROUP BY a.truck_id) bb on aa.TRUCK_ID=bb.truck_id  
+left join base_company_tab cc on aa.COMPANY_ID=cc.company_id
+	</sql>
+</mapper>
+
+<!-- 获取用户企业信息 -->
+<mapper id="getUserCompanyMsg">
+	<sql key="getUserCompanyMsg" operator="select" resultType="map">
+				select bct.*,sut.company_auth_status from (SELECT company_id,company_auth_status from sys_user_tab WHERE user_id='$_CRU_USER_ID_$' ) sut LEFT JOIN base_company_tab bct on sut.company_id=bct.company_id
+   </sql>
+</mapper>
+
+
+<!-- 查询园区  -->
+<mapper id="queryPark">
+	<sql key="queryPark" operator="select" resultType="list">
+		select PARK_ID,PARK_NAME from base_park_tab WHERE IS_DEL='N' and PARK_NAME!='' and PARK_NAME is NOT NULL and PARK_ID!='' and PARK_ID IS NOT NULL ORDER BY AREA_CODE DESC
+</sql>
+</mapper>
+
+<!-- 根据code获取省市县text -->
+<mapper id="getTextByCode">
+    <sql key="getTextByCode" operator="select" resultType="map">
+      SELECT group_concat(aa.TEXT) text FROM 
+				(
+					SELECT a.`CODE`,a.TEXT,a.PIN_YIN FROM base_area_tab a WHERE 1=1 
+						UNION ALL 
+					SELECT r.`CODE`,r.TEXT,r.PIN_YIN FROM region_divide_tab r WHERE 1=1 
+				) aa WHERE 1=1 AND FIND_IN_SET(aa.`CODE`,#{CODE}) LIMIT 1 
+    </sql>
+</mapper>
+
+<!-- 判断公司名是否存在 -->
+<mapper id="checkCompanyName">
+	<sql key="checkCompanyName" operator="select" resultType="map" >
+		select COUNT(*) countCompany from base_company_tab where company_name=#{companyName} and company_id !=(select company_id from sys_user_tab WHERE user_id='$_CRU_USER_ID_$') 
+</sql>
+</mapper>
+
+<!-- 我发布的货源-上下架操作 -->
+<mapper id="setCargoIsShow">
+	<sql key="setCargoIsShow"  operator="execute">
+		update sys_cargo_tab set is_show=#{IS_SHOW}
+			<isEqual property="IS_SHOW" compareValue="0">  
+									,CREATE_TIME=now()
+							</isEqual>
+ where user_id=#{USER_ID} and seq=#{CARGO_ID} 
+   </sql>
+   <sql operator="callback" class="syncDelCargoCallBack" />
+</mapper>
+
+<!-- 删除我发布的货源 -->
+<mapper id="deleteMyCargo">
+	<sql key="deleteMyCargo"  operator="execute">
+		update sys_cargo_tab set is_delete='Y' where user_id=#{USER_ID} and seq=#{CARGO_ID} 
+   </sql>
+   <sql operator="callback" class="syncDelCargoCallBack" />
+</mapper>
+
+<!-- 删除我发布的车源 -->
+<mapper id="deleteMyTruck">
+	<sql key="deleteMyTruck"  operator="execute">
+		update yl_tab set is_delete='Y' where user_id=#{USER_ID} and yl_id=#{TRUCK_ID} 
+   </sql>
+</mapper>
+
+<!-- 获取司机信息 -->
+<mapper id="getDriverInfo">
+	<sql key="getDriverInfo"  operator="select" resultType="map">
+		select u.user_id,u.user_name,stt.TRUCK_PLATE,u.user_auth_status,ifnull(u.driver_type,0) driver_type 
+		from 
+			sys_user_tab u 
+		LEFT JOIN sys_truck_tab stt on u.truck_id = stt.TRUCK_ID 
+		where u.tel=#{driverTel} and u.is_del='N'
+   </sql>
+</mapper>
+
+</mappers>
+

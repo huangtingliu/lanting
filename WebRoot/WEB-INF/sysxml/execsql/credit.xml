@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mappers xmlns="http://www.weimingfj.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://itest.56913.com:20080/xsd/mappers.xsd">
+<!-- 我的贷款状态 -->
+<mapper id="getCreditStatus">
+	<sql key="getCreditStatus" resultType="map" operator="select">
+				SELECT mpot.CREATE_USER,mpot.STATE,mpot.LOAN_SUCCESS,mcot.CHG_DESC from ms_personal_order_tab mpot 
+			left join  ms_order_chg_tab mcot on mpot.ORDER_ID=mcot.ORDER_ID and mpot.STATE=mcot.STATE 
+where mpot.CREATE_USER="$_CRU_USER_ID_$" and mpot.is_effect ="Y" 
+   </sql>
+</mapper>
+<mapper id="getPersonalCredit">
+	<sql key="getPersonalCredit" resultType="map" operator="select">
+				SELECT mpot.*,bat.full_text areacode_text,bat1.full_text census_area_text from ms_personal_order_tab mpot 
+				left join base_area_tab bat on mpot.areacode=bat.CODE 
+				left join base_area_tab bat1 on mpot.census_area = bat1.CODE 
+where mpot.CREATE_USER="$_CRU_USER_ID_$" and mpot.is_effect ="Y" GROUP BY mpot.CREATE_USER
+   </sql>
+</mapper>
+<!-- 个人贷款申请 -->
+<mapper id="savePersonalCredit">
+<sql key="savePersonalCredit"  operator="execute">
+	update ms_personal_order_tab set is_effect='N' where CREATE_USER='$_CRU_USER_ID_$' and LOAN_SUCCESS!='D'
+</sql>
+	<sql key="savePersonalCredit1"  operator="execute">
+					INSERT into ms_personal_order_tab(ORDER_ID,PROPOSER_TYPE,NAME,SEX,BIRTHDAY,NATIONALITY,NATION,MARITAL,CERT_TYPE,CERT_NO,HOME_PHONE,MOBILE,CENSUS_TYPE,CENSUS_AREA,FUND_INFO,CENSUS_ADDR,
+CORP_NAME,BUSINESS,REG_DATE,AREACODE,ADDR,REG_CAPITAL,REG_CAPITAL_UNIT,REAL_CAPITAL,REAL_CAPITAL_UNIT,CORP_MEMBER,CTRL_MEMBER,CTRL_MEMBER_TIME,CONTACT_PHONE,MEMBERS,OFFICE_GET,LAST_DEBTS,LAST_FUND,CURR_FUND,
+CURR_SALES,LAST_SALES,CURR_ASSETS,CURR_DEBTS,DEBTS_DETAILS,LOAN_AMOUNT,APP_TIME,STATE,ORDER_TYPE,PROPOSER,PROPOSER_TEL,ORDER_CODE,CREATE_USER)
+values (#{order_id},#{PROPOSER_TYPE},#{name},#{SEX},#{birthday},#{nationality},#{nation},#{MARITAL},#{CERT_TYPE},#{cert_no},#{home_phone},#{mobile},#{CENSUS_TYPE},#{census_area},#{fund_info},#{census_addr},
+#{corp_name},#{business},#{reg_date},#{areacode},#{addr},#{reg_capital},#{reg_capital_unit},#{real_capital},#{real_capital_unit},#{corp_member},#{ctrl_member},#{ctrl_member_time},#{contact_phone},
+#{members},#{OFFICE_GET},#{last_debts},#{last_fund},#{curr_fund},
+#{curr_sales},#{last_sales},#{curr_assets},#{curr_debts},#{debts_details},#{loan_amount},now(),#{state},#{order_type_txt},'$_CRU_USER_NAME_$',#{userMobile},date_format(now(),"%Y%m%d%h%i%s%f"),'$_CRU_USER_ID_$')
+   </sql>
+</mapper> 
+<!-- 企业贷款申请 -->
+<mapper id="saveCompanyCredit">
+<sql key="saveCompanyCredit"  operator="execute">
+	update ms_personal_order_tab set is_effect='N' where CREATE_USER='$_CRU_USER_ID_$' and LOAN_SUCCESS!='D' 
+</sql>
+	<sql key="saveCompanyCredit1"  operator="execute">
+					INSERT into ms_personal_order_tab(ORDER_ID,CORP_NAME,BUSINESS,REG_DATE,AREACODE,ADDR,REG_CAPITAL,REG_CAPITAL_UNIT,REAL_CAPITAL,REAL_CAPITAL_UNIT,CORP_MEMBER,CTRL_MEMBER,CTRL_MEMBER_TIME,CONTACT_PHONE,MEMBERS,OFFICE_GET,LAST_DEBTS,LAST_FUND,CURR_FUND,
+CURR_SALES,LAST_SALES,CURR_ASSETS,CURR_DEBTS,DEBTS_DETAILS,LOAN_AMOUNT,APP_TIME,STATE,ORDER_TYPE,PROPOSER,PROPOSER_TEL,ORDER_CODE,CREATE_USER)
+values (#{order_id},#{corp_name},#{business},#{reg_date},#{areacode},#{addr},#{reg_capital},#{reg_capital_unit},#{real_capital},#{real_capital_unit},#{corp_member},#{ctrl_member},#{ctrl_member_time},#{contact_phone},
+#{members},#{COMP_OFFICE_GET},#{last_debts},#{last_fund},#{curr_fund},
+#{curr_sales},#{last_sales},#{curr_assets},#{curr_debts},#{debts_details},#{loan_amount},now(),#{state},#{order_type_txt},'$_CRU_USER_NAME_$',#{userMobile},DATE_FORMAT(now(),"%Y%m%d%h%i%s%f"),'$_CRU_USER_ID_$')
+   </sql>
+</mapper> 
+<!-- 个人贷款修改 -->
+<mapper id="updatePersonalCredit">
+	<sql key="updatePersonalCredit"  operator="execute">
+update ms_personal_order_tab SET PROPOSER_TYPE=#{PROPOSER_TYPE},NAME=#{name},SEX=#{SEX},BIRTHDAY=#{birthday},NATIONALITY=#{nationality},NATION=#{nation},MARITAL=#{MARITAL},CERT_TYPE=#{CERT_TYPE},CERT_NO=#{cert_no}
+,HOME_PHONE=#{home_phone},MOBILE=#{mobile},CENSUS_TYPE=#{CENSUS_TYPE},CENSUS_AREA=#{census_area},FUND_INFO=#{fund_info},CENSUS_ADDR=#{census_addr},CORP_NAME=#{corp_name},BUSINESS=#{business},REG_DATE=#{reg_date}
+,AREACODE=#{areacode},ADDR=#{addr},REG_CAPITAL=#{reg_capital},REG_CAPITAL_UNIT=#{reg_capital_unit},REAL_CAPITAL=#{real_capital},REAL_CAPITAL_UNIT=#{real_capital_unit},CORP_MEMBER=#{corp_member},CTRL_MEMBER=#{ctrl_member}
+,CTRL_MEMBER_TIME=#{ctrl_member_time},CONTACT_PHONE=#{contact_phone},OFFICE_GET=#{OFFICE_GET},LAST_DEBTS=#{last_debts},LAST_FUND=#{last_fund},CURR_FUND=#{curr_fund},CURR_SALES=#{curr_sales},LAST_SALES=#{last_sales}
+,CURR_ASSETS=#{curr_assets},CURR_DEBTS=#{curr_debts},DEBTS_DETAILS=#{debts_details},LOAN_AMOUNT=#{loan_amount},ORDER_TYPE=#{order_type_txt},STATE=#{state},members=#{members} 
+WHERE ORDER_ID=#{order_id}
+   </sql>
+</mapper> 
+<!-- 企业贷款修改 -->
+<mapper id="updateCompanyCredit">
+	<sql key="updateCompanyCredit"  operator="execute">
+update ms_personal_order_tab SET CORP_NAME=#{corp_name},BUSINESS=#{business},REG_DATE=#{reg_date}
+,AREACODE=#{areacode},ADDR=#{addr},REG_CAPITAL=#{reg_capital},REG_CAPITAL_UNIT=#{reg_capital_unit},REAL_CAPITAL=#{real_capital},REAL_CAPITAL_UNIT=#{real_capital_unit},CORP_MEMBER=#{corp_member},CTRL_MEMBER=#{ctrl_member}
+,CTRL_MEMBER_TIME=#{ctrl_member_time},CONTACT_PHONE=#{contact_phone},OFFICE_GET=#{COMP_OFFICE_GET},LAST_DEBTS=#{last_debts},LAST_FUND=#{last_fund},CURR_FUND=#{curr_fund},CURR_SALES=#{curr_sales},LAST_SALES=#{last_sales}
+,CURR_ASSETS=#{curr_assets},CURR_DEBTS=#{curr_debts},DEBTS_DETAILS=#{debts_details},LOAN_AMOUNT=#{loan_amount},ORDER_TYPE=#{order_type_txt},STATE=#{state},members=#{members} 
+WHERE ORDER_ID=#{order_id}
+   </sql>
+</mapper> 
+<!-- 获取贷款详情 -->
+<mapper id="toPersonalCreditDetail">
+	<sql key="toPersonalCreditDetail" operator="select" resultType="list"> 
+select moct.auth_user,moct.auth_user_tel,moct.CHG_DESC,DATE_FORMAT(moct.FEED_TIME,"%Y-%m-%d") FEED_TIME,sdt.text STATE,(case when mpot.state=moct.state then mpot.LOAN_SUCCESS else 'D' end )LOAN_SUCCESS from ms_personal_order_tab mpot left join ms_order_chg_tab moct on mpot.order_id = moct.order_id 
+				left join sys_dict_tab sdt on moct.state=sdt.code and sdt.type='ORDER_STATE'
+				where mpot.CREATE_USER='$_CRU_USER_ID_$' and mpot.is_effect='Y' and mpot.state!='1' and  mpot.state!='2'  ORDER BY moct.STATE
+   </sql>
+</mapper>
+</mappers>
+

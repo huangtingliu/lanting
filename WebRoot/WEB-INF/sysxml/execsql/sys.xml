@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mappers xmlns="http://www.weimingfj.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://itest.56913.com:20080/xsd/mappers.xsd">
+    		<!-- 查询人员列表 -->
+	<mapper id="queryUserList">
+		<sql key="queryUserList" operator="select" resultType="autoPaging">
+			select USER_ID,USER_CODE,USER_NAME,EMAIL,MOBILE,LAST_LOGIN_TIME from ms_user_tab where IS_DISABLED='N'
+	    </sql>
+	</mapper>
+	<!-- 查询部门树 -->
+	<mapper id="deptTree">
+		<sql key="deptTree" resultType="list" operator="select">
+			SELECT d.DEPT_ID,d.DEPT_NAME,d.F_DEPT_ID, 
+				(SELECT dd.DEPT_NAME FROM cp_dept_tab dd WHERE dd.DEPT_ID=d.F_DEPT_ID) F_DEPT_NAME 
+				FROM cp_dept_tab d WHERE d.IS_DEL='N' and d.cp_id=#{session_company_id}
+		</sql>
+	</mapper>
+	<!-- 查询部门名称 -->
+	<mapper id="queryDeptName">
+		<sql key="queryDeptName" resultType="string" operator="select">
+			SELECT DEPT_NAME
+				FROM cp_dept_tab WHERE IS_DEL='N' and dept_id=${P_DEPT_ID}
+		</sql>
+	</mapper>
+	<!-- 查询部门 -->
+	<mapper id="queryDept">
+		<sql key="queryDept" resultType="map" operator="select">
+			SELECT a.*,b.DEPT_NAME F_DEPT_NAME
+			FROM cp_dept_tab a 
+			left join cp_dept_tab b on b.dept_id=a.f_dept_id
+			WHERE a.IS_DEL='N' and a.dept_id=${DEPT_ID}
+		</sql>
+	</mapper>
+	<!-- 新增部门 -->
+	<mapper id="saveDept">
+	    <sql key="saveDept" operator="execute" >
+	        insert into cp_dept_tab(F_DEPT_ID, DEPT_NAME, DEPT_TEL, REMARK,cp_id) 
+					values (#{F_DEPT_ID}, #{DEPT_NAME}, #{DEPT_TEL}, #{REMARK},#{session_company_id}) 
+	    </sql>
+	</mapper>
+	<!-- 修改部门 -->
+	<mapper id="editDept">
+	    <sql key="editDept" operator="execute" >
+	        update cp_dept_tab set DEPT_NAME=#{DEPT_NAME}, DEPT_TEL=#{DEPT_TEL}, REMARK=#{REMARK}
+			where dept_id=${DEPT_ID}
+	    </sql>
+	</mapper>
+	<!-- 删除部门 -->
+	<mapper id="delDept">
+	    <sql key="delDept" operator="execute" >
+	        update cp_dept_tab set is_del='Y'
+			where dept_id=${DEPT_ID}
+	    </sql>
+	</mapper>
+	<!-- 查询角色列表 -->
+	<mapper id="queryRoleList">
+		<sql key="queryRoleList" operator="select" resultType="autoPaging">
+			select c.ROLE_ID,c.ROLE_NAME,c.REMARK,d.NAME as PNAME 
+			from cp_role_tab c 
+			left join (
+				select ROLE_ID, GROUP_CONCAT(NAME) as NAME from ((select ROLE_ID,PRIV_ID as PRIV_ID1 from cp_role_priv_tab ) a 
+				left JOIN (select PRIV_ID as PRIV_ID2,NAME from cp_priv_tab) b  on a.PRIV_ID1 = b.PRIV_ID2) 
+				GROUP BY ROLE_ID
+			) d on c.ROLE_ID = d.ROLE_ID 
+			where c.is_del='N' and cp_id=#{session_company_id} 
+			<isNotEqual property="session_role_type" compareValue="0">
+			    and role_type=0
+			</isNotEqual>
+			<isNotEmpty property="Q_ROLE_NAME">
+				and ROLE_NAME like '%${Q_ROLE_NAME}%' 
+			</isNotEmpty>
+			order by c.role_id desc
+	    </sql>
+	</mapper>
+	<!-- 新增角色 -->
+	<mapper id="addRole">
+	    <sql key="addRole" operator="execute" >
+	        <isNotEqual property="session_role_type" compareValue="0">
+	        	insert into cp_role_tab(ROLE_NAME, REMARK,cp_role_type,cp_id,own_cp_id) values (#{ROLE_NAME}, #{REMARK},#{session_role_type},#{session_company_id},#{own_cp_id}) 
+	 		</isNotEqual>
+	 		<isEqual property="session_role_type" compareValue="0">
+	        	insert into cp_role_tab(ROLE_NAME, REMARK,role_type,cp_id,own_cp_id) values (#{ROLE_NAME}, #{REMARK},#{role_type},#{session_company_id},#{own_cp_id}) 
+	 		</isEqual>
+	    </sql>
+	</mapper>
+	<!-- 查看角色信息 -->
+	<mapper id="queryRole">
+	    <sql key="queryRole" resultType="map" operator="select">
+	        select * from cp_role_tab where ROLE_ID=#{ROLE_ID} 
+	    </sql>
+	</mapper>
+	<!-- 编辑角色信息 -->
+	<mapper id="editRole">
+	    <sql key="editRole" operator="execute">
+	        update cp_role_tab set 
+				ROLE_NAME=#{ROLE_NAME}, 
+				<isEqual property="session_role_type" compareValue="0">
+				role_type=#{role_type},
+				</isEqual>
+				REMARK=#{REMARK} 
+			where ROLE_ID=#{ROLE_ID}
+	    </sql>
+	</mapper>
+	<!-- 删除角色信息 -->
+	<mapper id="delRole">
+	    <sql key="delRole" operator="execute">
+	        update cp_role_tab set is_del='Y'
+			where ROLE_ID=#{ROLE_ID}
+	    </sql>
+	</mapper>
+	
+	<!-- 查看权限列表 -->
+	<mapper id="queryPrivList">
+	    <sql key="queryPrivList" operator="select" resultType="list">
+			select a.*,(select count(1) from cp_priv_tab where IS_DEL='N' and pid=a.priv_id and cp_id=#{session_company_id}) childNum  from cp_priv_tab a WHERE a.IS_DEL='N' and cp_id=#{session_company_id}
+			<isNotEmpty property="pid">
+			    and pid=${pid}
+			</isNotEmpty>
+			<isEmpty property="pid">
+			    and pid=0
+			</isEmpty>
+		</sql>
+	</mapper>
+	<!-- 查看权限信息 -->
+	<mapper id="queryPriv">
+	    <sql key="queryPriv" operator="select" resultType="map">
+			select a.* from cp_priv_tab a WHERE a.IS_DEL='N' and cp_id=#{session_company_id}
+			<isNotEmpty property="id">
+		    	and priv_id=${id}
+			</isNotEmpty>
+		</sql>
+	</mapper>
+	<!-- 新增权限 -->
+	<mapper id="addPriv">
+	    <sql key="priv_add" operator="execute" >
+	        insert into cp_priv_tab(PID, PNAME, NAME, remark, IS_FOLDER, is_del, CREATED, CREATER,cp_id) 
+			values (#{PID}, #{PNAME}, #{PRIV_NAME}, #{REMARK}, #{IS_FOLDER}, 'N', now(), '$_CRU_USER_ID_$',#{session_company_id})
+	    </sql>
+	</mapper>
+	<!-- 编辑权限 -->
+	<mapper id="editPriv">
+	    <sql key="priv_edit" operator="execute" >
+	        update cp_priv_tab set NAME=#{PRIV_NAME}, remark=#{REMARK}, IS_FOLDER=#{IS_FOLDER}, lastmod=now(), modifyer='$_CRU_USER_ID_$' 
+			where priv_id=${PRIV_ID}
+	    </sql>
+	</mapper>
+	<!-- 删除权限 -->
+	<mapper id="delPriv">
+	    <sql key="priv_del" operator="execute" >
+	        update cp_priv_tab set is_del='Y' 
+			where priv_id=${id}
+	    </sql>
+	    <sql key="del_child_priv" operator="execute" >
+	        update cp_priv_tab set is_del='Y' 
+			where pid=${id}
+	    </sql>
+	</mapper>
+	<!-- 保存角色权限 -->
+	<mapper id="saveRolePriv">
+		<sql key="save_user_and_role_del" operator="execute" >
+			delete from cp_role_priv_tab where ROLE_ID=#{ROLE_ID}
+	    </sql>
+	    <sql key="save_user_and_role" operator="execute" iterfields="PRIV_IDS" iterfieldsplit=",">
+	        insert into cp_role_priv_tab (ROLE_ID, PRIV_ID) values (#{ROLE_ID}, #{PRIV_IDS})
+	    </sql>
+	</mapper>
+	
+	<!-- 查看权限列表 -->
+	<mapper id="queryRolePrivList">
+	    <sql key="queryRolePrivList" operator="select" resultType="list">
+			select a.priv_id,a.name,a.pid,a.is_folder,IF(b.priv_id is null,'false','true') is_checked 
+			from cp_priv_tab a 
+			left join (select * from cp_role_priv_tab where role_id=${role_id}) b on a.priv_id=b.priv_id
+			WHERE a.IS_DEL='N' and cp_id=#{session_company_id}
+			<isNotEqual property="session_role_type" compareValue="0">
+			and a.priv_id in (
+				select priv_id from cp_role_priv_tab t 
+				inner join cp_user_role_tab t1 on t.role_id=t1.role_id 
+				where t1.user_id='$_CRU_USER_ID_$'
+			)
+			</isNotEqual>
+		</sql>
+	</mapper>
+	
+	
+		<!-- 新增人员 -->
+	<mapper id="addUser">
+	    <sql key="addUser" operator="execute" >
+	        insert into cp_user_tab(USER_ID, CP_ID, USER_CODE, USER_NAME, USER_PWD, DEPT_ID, ID_NO, TEL, FAX, SEX, EMAIL, ADDR,  CREATE_USER, CREATE_DATE) 
+	        values (UUID(), #{session_company_id}, #{USER_CODE}, #{USER_NAME}, SUBSTR(md5('123456') FROM 9 FOR 16), #{user_dept.id}, #{ID_NO}, #{TEL}, #{FAX},#{SEX}, #{EMAIL}, #{ADDR}, '$_CRU_USER_ID_$', now())   
+	    </sql>
+	</mapper>
+	<!-- 查看人员信息 -->
+	<mapper id="queryUser">
+	    <sql key="queryUser" resultType="map" operator="select">
+
+	        select *, DEPT_NAME from cp_user_tab c left join cp_dept_tab d on c.dept_id = d.dept_id where USER_ID=#{USER_ID} 
+
+	    </sql>
+	</mapper>
+	<!-- 编辑人员信息 -->
+	<mapper id="editUser">
+	    <sql key="editUser" operator="execute">
+	        update cp_user_tab set 
+				USER_CODE=#{USER_CODE}, 
+				USER_NAME=#{USER_NAME}, 
+				DEPT_ID=#{user_dept.id},
+				ID_NO=#{ID_NO}, TEL=#{TEL},
+			    FAX=#{FAX}, SEX=#{SEX}, 
+				EMAIL=#{EMAIL}, ADDR=#{ADDR},  
+				MODIFY_USER='$_CRU_USER_ID_$', 
+				MODIFY_TIME=now()
+			where USER_ID=#{USER_ID}
+	    </sql>
+	</mapper>
+	<!-- 删除人员信息 -->
+	<mapper id="delUser">
+	    <sql key="delUser" operator="execute">
+	        update cp_user_tab set is_del='Y'
+			where USER_ID=#{USER_ID}
+	    </sql>
+	</mapper>
+	<!-- 重置密码信息 -->
+	<mapper id="resetPwd">
+	    <sql key="resetPwd" operator="execute">
+	        update ms_user_tab set USER_PWD=md5('123456') 
+			where USER_ID=#{user_id}
+	    </sql>
+	</mapper>
+	<!-- 修改密码信息 -->
+	<mapper id="editPwd">
+	    <sql key="editPwd" operator="execute">
+	        update ms_user_tab set USER_NAME=#{userName},USER_PWD=md5(#{newpwd})
+			where USER_ID='$_CRU_USER_ID_$' 
+	    </sql>
+	</mapper>
+	<!-- 查询用户分配角色列表 -->
+	<mapper id="queryUserRoleList">
+		<sql key="queryRoleList" operator="select" resultType="autoPaging">
+			select c.ROLE_ID,c.ROLE_NAME,c.REMARK,d.NAME as PNAME 
+			from cp_role_tab c 
+			left join (
+				select ROLE_ID, GROUP_CONCAT(NAME) as NAME from ((select ROLE_ID,PRIV_ID as PRIV_ID1 from cp_role_priv_tab ) a 
+				left JOIN (select PRIV_ID as PRIV_ID2,NAME from cp_priv_tab) b  on a.PRIV_ID1 = b.PRIV_ID2) 
+				GROUP BY ROLE_ID
+			) d on c.ROLE_ID = d.ROLE_ID 
+			where c.is_del='N' and cp_id=#{session_company_id}
+			<isNotEqual property="session_role_type" compareValue="0">
+			    and cp_role_type=#{session_role_type}
+			</isNotEqual>
+			<isNotEmpty property="Q_ROLE_NAME">
+				and ROLE_NAME like '%${Q_ROLE_NAME}%' 
+			</isNotEmpty>
+	    </sql>
+	    <sql key="queryUserRoles" operator="select" resultType="string">
+	        SELECT GROUP_CONCAT(role_id) from cp_user_role_tab where user_id=#{user_id}
+	    </sql>
+	</mapper>
+	
+	<!-- 保存用户角色 -->
+	<mapper id="saveUserRole">
+		<sql key="delUserRole" operator="execute" >
+			delete from cp_user_role_tab where USER_ID=#{userId}
+	    </sql>
+	    <sql key="saveUserRole" operator="execute" iterfields="roleIds" iterfieldsplit=",">
+	        insert into cp_user_role_tab (ROLE_ID, USER_ID) values (#{roleIds}, #{userId})
+	    </sql>
+	</mapper>
+	
+	<!-- 查询权限对应的url -->
+	<mapper id="queryPrivUrl">
+	    <sql key="queryPrivUrl" resultType="list" operator="select">
+	        select * from sys_url_tab where sys_code='cpwb' and priv_id=#{Q_PRIV_ID}
+	    </sql>
+	</mapper>
+	<!-- 查询没有权限的url配置 -->
+	<mapper id="queryNotPrivUrl">
+	    <sql key="queryNotPrivUrl" resultType="autoPaging" operator="select">
+	        select * from sys_url_tab where sys_code='cpwb' and (priv_id is null or priv_id='')
+	        <isNotEmpty property="Q_URL_ID">
+	            and url_id like '%${Q_URL_ID}%'
+	        </isNotEmpty>
+	    </sql>
+	</mapper>
+	<!-- 保存URL权限 -->
+	<mapper id="saveUrlPriv">
+	    <sql key="saveUrlPriv" operator="execute" iterfields="urlids" iterfieldsplit=",">
+	        update sys_url_tab set priv_id=#{privId}
+	        where url_id=#{urlids}
+	    </sql>
+	</mapper>
+	<!-- 保存URL权限 -->
+	<mapper id="delUrlPriv">
+	    <sql key="delUrlPriv" operator="execute">
+	        update sys_url_tab set priv_id=null
+	        where url_id=#{urlid}
+	    </sql>
+	</mapper>
+	<!-- 查询字典数据 -->
+	<mapper id="dictionary_query">
+	    <sql key="dictionary_query" resultType="list" operator="select">
+	           SELECT * FROM `sys_dict_tab` WHERE  is_del='N' 
+        <isNotEmpty property="DIC_NAME">  
+              and type = #{DIC_NAME}
+        </isNotEmpty>    
+        order by seq 
+	    </sql>
+	</mapper>
+<mapper id="getAllCount">
+  <sql key="select_all_prov" sqlType="query" resultType="map" dynamic="false">
+		
+SELECT 
+	(
+SELECT count(*)  FROM(SELECT DISTINCT(CONCAT_WS('',tt.TRUCK_PLATE, tt.TRUCK_PLATE_COLOR)) as d,tt.* FROM `sys_truck_tab` tt WHERE tt.is_delete = '0' AND tt.WAY_FROM != '0'  
+ AND (tt.AUTH_STATUS = '2'  OR (tt.AUTH_STATUS = '0' AND tt.LOC_WAY_FROM != 1 AND <![CDATA[ datediff(now(),tt.LAST_LOC_TIME)<=1 ]]> ) ) 
+ AND tt.LAST_LOC_LNG IS NOT NULL AND tt.LAST_LOC_LAT IS NOT NULL AND tt.LAST_LOC_ADDR IS NOT NULL AND tt.LAST_LOC_ADDR != '') aa 
+) AS  truck_count,
+	(
+		SELECT  
+			count(*) 
+		FROM 
+			sys_cargo_tab 
+		WHERE 
+			DATE_FORMAT(CREATE_TIME,"%Y-%m-%d")=DATE_FORMAT(now(),"%Y-%m-%d") and is_delete='N' and IS_SHOW=0  
+		AND IS_DELETE = 'N' 
+		AND IS_SHOW = '0' 
+	) AS cargo_count,
+	(
+		SELECT 
+			count(*) 
+		FROM 
+			yl_tab 
+		WHERE 
+			DATE_FORMAT(add_time,"%Y-%m-%d")=DATE_FORMAT(now(),"%Y-%m-%d")  
+		AND IS_DELETE = 'N'  and VALID="1" 
+	) AS yl_count  
+FROM 
+	DUAL
+
+	</sql>
+</mapper>
+<!-- 验证该用户是否存在 -->
+<mapper id="yzuser">
+	<sql key="yzuser" operator="select" resultType="map">
+		select count(1)countUser from sys_user_tab where 1=1
+		<isNotEmpty property="tel">  
+   and tel =#{tel} 
+</isNotEmpty>
+		<isNotEmpty property="user_code">  
+   and user_code =#{user_code} 
+</isNotEmpty>
+ and is_del='N'
+</sql>
+</mapper>
+</mappers>
+

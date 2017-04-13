@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mappers xmlns="http://www.weimingfj.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://itest.56913.com:20080/xsd/mappers.xsd">
+
+	<!-- 首页加载货源 -->
+	<mapper id="loadTruckInfo">
+		<sql key="loadTruckInfo" operator="select" resultType="paging">
+			SELECT
+			<isNotEmpty property="query_count"> count(1) </isNotEmpty>
+			<isEmpty property="query_count"> * </isEmpty>
+			FROM(
+			select DATE_FORMAT(c.ADD_TIME,"%Y-%m-%d %T")
+			pub_date1,c.*,c.user_name
+			MEMBER_NAME,( select count(1) from collect
+			where collect_type=2 and collect_id=c.yl_id and
+			member_id='$_CRU_USER_ID_$' ) as TYPE,(select user_auth_status from
+			sys_user_tab where user_id=c.user_id) ua,(select company_auth_status
+			from sys_user_tab where user_id=c.user_id) ca,
+			(select count(1) from yb_vip_user_today_his yvut where yvut.userid='$_CRU_USER_ID_$' and yvut.code='CYXX' and yvut.object_id=c.yl_id and source='WEB') isshow 
+			from (
+			SELECT y.*,DATE_FORMAT(y.END_DATE,"%Y-%m-%d") END_DATE1
+			,DATE_FORMAT(st.LAST_LOC_TIME,"%Y-%m-%d %T")
+			F_LAST_LOC_TIME,st.LAST_LOC_LNG,st.LAST_LOC_LAT,st.LAST_LOC_ADDR,st.LOC_WAY_FROM
+			as FROM_TYPE,
+			a.FULL_TEXT YL_SOURCE_TEXT,
+			(SELECT group_concat(bb.FULL_TEXT) text FROM v_area_tab bb WHERE FIND_IN_SET(bb.`CODE`, y.destination)) yl_dest_text 
+			from yl_tab y
+			left join v_area_tab a on a.`CODE`=y.YL_SOURCE
+			LEFT JOIN sys_truck_tab st on
+			y.TRUCK_PLATE=st.TRUCK_PLATE and
+			st.TRUCK_PLATE_COLOR=y.TRUCK_PLATE_COLOR
+			where y.is_delete='N' and
+			y.valid=1 
+			<isNotEmpty property="vip">
+				and y.VIP=#{vip} 
+			</isNotEmpty>
+			
+			and y.end_date >=
+			now()
+			<isNotEmpty property="is_online">
+				AND st.LAST_LOC_LNG IS NOT NULL AND
+				st.LAST_LOC_LAT IS NOT NULL and
+				st.LAST_LOC_TIME >
+				date_sub(curdate(), interval '1' day)
+			</isNotEmpty>
+			<isNotEmpty property="topTime">
+				and y.add_time > #{topTime}
+			</isNotEmpty>
+			<isNotEmpty property="bottomTime">
+				and y.add_time &lt;= #{bottomTime}
+			</isNotEmpty>
+
+			<isNotEmpty property="QUERY_SOURCE">
+				and y.yl_source like
+				'${QUERY_SOURCE}%'
+			</isNotEmpty>
+			<isNotEmpty property="QUERY_DESTINATION">
+				and y.destination REGEXP
+				'(^(${QUERY_DESTINATION})\d*,?)|(,(${QUERY_DESTINATION})\d*,?)'
+			</isNotEmpty>
+			<isNotEmpty property="TRUCK_TYPE">
+				and y.TRUCK_TYPE =#{TRUCK_TYPE}
+			</isNotEmpty>
+			<isNotEmpty property="TRUCK_LENGTH">
+				and y.TRUCK_LENGTH  = '${TRUCK_LENGTH}' 
+			</isNotEmpty>
+			<isNotEmpty property="TRUCK_LOAD">
+				and y.TRUCK_LOAD  = '${TRUCK_LOAD}'  
+			</isNotEmpty>
+			<isNotEmpty property="TRUCK_PLATE">
+				and y.TRUCK_PLATE  LIKE '%${TRUCK_PLATE}%'  
+			</isNotEmpty>
+			<isNotEmpty property="vip">
+				and y.vip = ${vip}
+			</isNotEmpty>
+			ORDER BY y.ADD_TIME desc
+			) c
+			) aa
+			<isEmpty property="query_count">
+ 				<isNotEmpty property="pager">
+ 					LIMIT ${PAGESTART}, ${PAGENUM}
+ 				</isNotEmpty>	
+			</isEmpty>
+		</sql>
+	</mapper>
+	<!-- 获取单个车源信息 -->
+	<mapper id="getTruckInfoById">
+		<sql key="getTruckInfoById" resultType="map" operator="select">
+			select DATE_FORMAT(c.ADD_TIME,"%Y-%m-%d %T") f_pub_time, st.LAST_LOC_ADDR,c.*,a.FULL_TEXT
+			YL_SOURCE_TEXT,(SELECT group_concat(aa.FULL_TEXT) text FROM
+			v_area_tab aa WHERE FIND_IN_SET(aa.`CODE`, c.destination))
+			yl_dest_text from yl_tab c
+			left join v_area_tab a on a.`CODE`=c.YL_SOURCE 
+			LEFT JOIN sys_truck_tab st on st.TRUCK_PLATE=c.TRUCK_PLATE 
+			where 1=1 AND c.yl_id =#{TRUCK_ID}
+		</sql>
+	</mapper>
+
+	<!-- 添加单个车源信息 -->
+	<mapper id="addTruckInfo">
+		<sql key="note_save" operator="execute">
+			INSERT INTO yl_tab(yl_id,yl_source, destination, <!-- truck_plate, --> truck_type,
+			truck_length,  truck_load, driver_name,
+			driver_mobile, contact_name, contact_mobile, is_delete, tenant_id,
+			user_name, user_id, really_name, valid, add_time, way_from, yl_no,
+			DRIVER_IDCARD, YL_TYPE, PAY_METHOD, IS_GROUP, START_DATE, END_DATE,
+			ROAD, remark,CONTACT_COMPANY,PRICE,UNIT,	VIP)
+			 select UUID(),#{SOURCE}, #{DESTINATION}, <!-- #{TRUCK_PLATE}, -->
+			#{TRUCK_TYPE}, #{TRUCK_LENGTH},  #{TRUCK_LOAD},
+			#{CONTACT_NAME}, #{CONTACT_MOBILE}, #{CONTACT_NAME},
+			#{CONTACT_MOBILE}, 'N', '-1', '$_CRU_USER_NAME_$', '$_CRU_USER_ID_$',
+			'$_CRU_REAL_NAME_$', 1, NOW(), '2', '', '', 1, 2, 2,
+			#{START_DATE}, #{END_DATE}, #{TRUCK_LOAD}, '${REMARK2}',#{CONTACT_COMPANY}, #{yf},#{truck_yf_unit},${is_truck_vip} from sys_user_tab  where user_id ='$_CRU_USER_ID_$'
+
+
+		</sql>
+		<sql operator="callback" class="pointsCallBack" />
+
+	</mapper>
+	
+	<!-- 添加收藏 -->
+	<mapper id="addTruckCollect">
+		<sql key="addTruckCollect" operator="execute">
+			INSERT into collect(MEMBER_ID,COLLECT_ID,COLLECT_TYPE)VALUES(#{MEMBER_ID},#{COLLECT_ID},#{COLLECT_TYPE})	
+		</sql>
+	</mapper>
+	
+		<!-- 取消收藏 -->
+	<mapper id="deleteTruckCollect">
+		<sql key="deleteTruckCollect" operator="execute">
+			DELETE FROM collect WHERE COLLECT_ID=#{COLLECT_ID} and MEMBER_ID=#{MEMBER_ID}	
+		</sql>
+	</mapper>
+	<!-- 我的车队列表 -->
+	<mapper id="myTruckList">
+			<sql key="myTruckList" operator="select" resultType="paging">
+				<isEmpty property="query_count">
+				    select a.*,b.orderCount,c.STATUSOCOUNT from(
+				</isEmpty>
+				SELECT
+				<isNotEmpty property="query_count"> count(1) </isNotEmpty>
+				<isEmpty property="query_count">
+					t.id,
+					t.team_name,
+					t.INVITE_TO_TEL,
+					t.STATUS,
+					t.reason,
+					su.TEL,
+					su.USER_ID,
+					su.USER_CODE,
+					su.USER_NAME,
+					st.TRUCK_PLATE,
+					st.TRUCK_ID,
+					st.TRUCK_TYPE,
+					st.TRUCK_LENGTH,
+					st.TRUCK_TON,
+					st.DRIVER_NAME,
+					st.DRIVER_TEL,
+					st.LAST_LOC_ADDR,
+					DATE_FORMAT(st.LAST_LOC_TIME,'%m-%d %H:%i') LAST_LOC_TIME,
+					st.LOC_WAY_FROM,
+					st.LAST_LOC_LAT,
+					st.LAST_LOC_LNG,
+					su.LOC_STATUS
+				</isEmpty>
+				FROM
+				truck_team_tab t
+				LEFT JOIN sys_user_tab su ON t.invite_to_user = su.user_id
+				LEFT JOIN sys_truck_tab st ON su.truck_id = st.TRUCK_ID
+				WHERE
+				t.user_id = '$_CRU_USER_ID_$'
+				AND t.is_del = 'N'
+				<isNotEmpty property="DRIVER_NAME">
+					and su.USER_NAME like "%${DRIVER_NAME}%"
+				</isNotEmpty>
+				<isNotEmpty property="STATUS">
+					and t.STATUS =#{STATUS}
+				</isNotEmpty>
+				<isNotEmpty property="DRIVER_TEL">
+					and su.TEL like "%${DRIVER_TEL}%"
+				</isNotEmpty>
+				<isNotEmpty property="TRUCK_TON">
+					and st.TRUCK_TON =#{TRUCK_TON}
+				</isNotEmpty>
+				<isNotEmpty property="TRUCK_LENGTH">
+					and st.TRUCK_LENGTH =#{TRUCK_LENGTH}
+				</isNotEmpty>
+				<isNotEmpty property="TRUCK_TYPE">
+					and st.TRUCK_TYPE =#{TRUCK_TYPE}
+				</isNotEmpty>
+				<isNotEmpty property="TRUCK_PLATE">
+					and st.TRUCK_PLATE like "%${TRUCK_PLATE}%" and t.STATUS='2'
+				</isNotEmpty>
+				<isEmpty property="query_count">
+					order by t.team_name ,t.reply_date desc
+					<isNotEmpty property="pager">
+						LIMIT ${PAGESTART}, ${PAGENUM}
+					</isNotEmpty>
+					)a LEFT JOIN (
+					SELECT
+					count(*) orderCount,
+					ot.driver_id
+					FROM
+					transport_order_tab ot
+					WHERE
+					ot.is_del = 'N'
+					AND ot.create_user_id = '$_CRU_USER_ID_$'
+					GROUP BY
+					driver_id
+					) b ON a.USER_ID = b.driver_id
+					LEFT JOIN( SELECT
+					count(1) STATUSOCOUNT ,
+					ott.driver_id
+					FROM
+					transport_order_tab ott
+					WHERE
+					ott.is_del = 'N' and (ott.order_status ='1' or ott.order_status='3' or
+					ott.order_status='4' or ott.order_status='5' or
+					ott.order_status='0' )
+					AND ott.create_user_id = '$_CRU_USER_ID_$'
+					GROUP BY
+					driver_id
+					) c ON a.USER_ID = c.driver_id
+				</isEmpty>
+			</sql>
+		</mapper>
+<!-- 验证是否向用户发出了车队邀请 -->
+<mapper  id="validateUser">
+	<sql key="validateUser" operator="select" resultType="map" >
+		select count(1) userCount,status from truck_team_tab where user_id='$_CRU_USER_ID_$' and is_del='N' and status!='3' and  
+		invite_to_user in(select user_id from sys_user_tab where tel=#{tel})
+</sql>
+</mapper>
+<!-- 保存车辆车队所属 -->
+<mapper id="saveTruck">
+	<sql key="saveTruck"  operator="execute">
+		update truck_team_tab set team_name=#{team_name} where id=#{TRUCK_ID}
+   </sql>
+</mapper>
+<!-- 车辆的详情 -->
+<mapper id="vipTruckDetail">
+	<sql key="vipTruckDetail" operator="select" resultType="paging">
+<isEmpty property="query_count">select a.*,b.photoCount,ba.full_text loading_addr_text,bt.full_text receive_addr_text from(</isEmpty>	SELECT <isNotEmpty property="query_count"> count(1) </isNotEmpty>
+<isEmpty property="query_count">
+				ot.ORDER_ID,ot.ORDER_NO,ot.ORDER_STATUS,DATE_FORMAT(ot.arrive_date,"%Y-%m-%d") arrive_date, DATE_FORMAT(ot.CREATE_DATE,"%Y-%m-%d %T") CREATE_DATE,
+				ot.FEE,ot.CONSIGNOR,ot.CONSIGNOR_TEL,ot.LOADING_ADDR,ot.CONSIGNEE,ot.RECEIVE_ADDR,ot.consignee_tel,ot.loading_code,ot.receive_code 
+</isEmpty>
+				 from transport_order_tab ot  where  ot.driver_id=#{userId} and ot.is_del='N' and ot.create_user_id='$_CRU_USER_ID_$' 
+<isEmpty property="query_count">
+        order by CREATE_DATE desc 
+				<isNotEmpty property="pager">  
+						LIMIT ${PAGESTART}, ${PAGENUM} 
+				</isNotEmpty> 
+			) a  left join base_area_tab ba on a.loading_code=ba.code 
+				 left join base_area_tab bt on a.receive_code=bt.code 
+				 left join (select sum(if(pic1 is null or pic1='',0,1)+IF(pic2 is null or pic2='',0,1)+if(pic3 is null or pic3='',0,1)) photoCount,order_id from transport_order_proc_tab t GROUP BY order_id) b on a.order_id=b.order_id
+</isEmpty>
+</sql>
+</mapper>
+<!-- 获取车辆的GPS -->
+<mapper id="getGPS">
+  <sql key="getGPS" operator="select" resultType="map">
+	select LAST_LOC_LAT,LAST_LOC_LNG,b.TRUCK_ID,DRIVER_TEL,a.LOC_STATUS from sys_truck_tab b left join sys_user_tab a on a.tel=#{tel} where b.truck_id=#{truckId}
+	</sql>
+</mapper>
+</mappers>
+

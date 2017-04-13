@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mappers xmlns="http://www.weimingfj.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://itest.56913.com:20080/xsd/mappers.xsd">
+<!-- 物流黄页 -->
+	<mapper id="yellowpage">
+	<sql key="yellowpage"  operator="select" resultType="paging"  >
+		select 
+		<isEmpty property="query_count">
+			company_id,company_name,business_scope,business_lines,company_desc,addr,contacts,contact_tel,type
+		</isEmpty>
+		<isNotEmpty property="query_count"> count(1) </isNotEmpty>
+		from (
+		
+		SELECT
+			company_id,
+			company_name,
+			business_scope,
+			business_lines,
+			company_desc,
+			addr,
+			contacts,
+			contact_tel,
+		2 type,
+		is_del,
+		area_code
+		FROM
+			base_company_tab  
+		union all 
+		SELECT
+			PARK_ID ,
+			PARK_NAME ,
+			 '',
+			'',
+			PARK_DESC ,
+			PARK_ADDR,
+			CON_MAN ,
+			MOBILE ,1 type,
+			is_del,
+			area_code
+		FROM
+			base_park_tab 
+		) a 
+    where is_del='N' 
+    and company_name is not null and company_name!='' 
+   <!-- and business_scope is not null and business_scope!='' -->
+  <!--   and business_lines is not null and business_lines!=''  -->
+   <!-- and company_desc is not null and company_desc!='' -->
+    and addr is not null and addr!='' 
+    and contacts is not null and contacts!='' 
+    and contact_tel is not null and contact_tel!=''
+		<isNotEmpty property="areaCode">
+			and a.area_code like '${areaCode}%' 
+		</isNotEmpty>
+		<isNotEmpty property="companyName">
+			and a.company_name like '%${companyName}%' 
+		</isNotEmpty>
+		<isNotEmpty property="type">
+			and a.type = '${type}' 
+		</isNotEmpty>
+		<isEmpty property="query_count">
+		limit ${page_start},${rows}
+		</isEmpty>
+</sql>
+
+	</mapper>
+	<mapper id="yellowdetail">
+		<sql key="yellowdetail" operator="select" resultType="map">
+		select a.*,b.full_text area_name from base_company_tab a 
+		left join base_area_tab b on a.area_code=b.code 
+		where a.company_id=#{id}
+	</sql>
+	</mapper>
+		<mapper id="yellowYqdetail">
+		<sql key="yellowYqdetail" operator="select" resultType="map">
+		select a.*,b.full_text area_name from base_park_tab a 
+		left join base_area_tab b on a.area_code=b.code 
+		where a.park_id=#{id}
+	</sql>
+	</mapper>
+</mappers>
+

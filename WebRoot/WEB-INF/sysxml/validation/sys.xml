@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validations xmlns="http://www.weimingfj.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://itest.56913.com:20080/xsd/validations.xsd">
+	<!-- 删除部门是查找是否还有下级部门 -->
+    <validation id="delDept" >
+		<property field="DEPT_ID" method="database" msg="该部门底下包含子部门,无法进行删除!" sql="select count(1) from cp_dept_tab where F_DEPT_ID=${DEPT_ID} and IS_DEL='N' " ></property>
+	</validation>
+	<!-- 保存时判断部门名是否存在 -->
+    <validation id="saveDept">
+		<property field="DEPT_NAME" method="database" msg="该名称已被使用, 请重新输入!" sql="select count(1) from cp_dept_tab where cp_id=#{session_company_id} and IS_DEL='N' and DEPT_NAME=#{DEPT_NAME}" ></property>
+	</validation>
+	<!-- 修改时判断部门名是否存在 -->
+    <validation id="editDept">
+		<property field="DEPT_NAME" method="database" msg="该名称已被使用, 请重新输入!" sql="select count(1) from cp_dept_tab where DEPT_ID!=${DEPT_ID} and IS_DEL='N' and cp_id=#{session_company_id} and DEPT_NAME=#{DEPT_NAME}" ></property>
+	</validation>
+    <!-- 保存角色时判断角色名是否存在 -->
+    <validation id="saveRole">
+		<property field="ROLE_NAME" method="database" msg="角色名称必须唯一" sql="select count(1) from cp_role_tab where is_del='N' and cp_id=#{session_company_id} and ROLE_NAME=#{ROLE_NAME}" ></property>
+	</validation>
+    <!-- 编辑角色时判断角色名是否存在 -->
+    <validation id="editRole">
+		<property field="ROLE_NAME" method="database" msg="角色名称已存在" sql="select count(1) from cp_role_tab where ROLE_NAME=#{ROLE_NAME} and IS_DEL='N' and cp_id=#{session_company_id} and role_id!=${ROLE_ID}" ></property>
+	</validation>
+    <!-- 删除角色时判断是否是固化角色 -->
+    <validation id="delRole">
+		<property field="ROLE_ID" method="database" msg="系统角色不允许删除" sql="select count(1) from cp_role_tab where ROLE_ID=${ROLE_ID} and IS_DEL='N' and cp_id=#{session_company_id} and role_type=1" ></property>
+	</validation>
+    <!-- 删除权限时判断是否还有子节点 -->
+    <validation id="delPriv">
+		<property field="id" method="database" msg="该权限下还有子权限,无法进行删除" sql="select count(1) from cp_priv_tab where pid=${id} and IS_DEL='N' and cp_id=#{session_company_id}" ></property>
+	</validation>
+	<!-- 保存角色时判断人员名是否存在 -->
+    <validation id="addUser">
+		<property field="USER_CODE" method="database" msg="用户名必须唯一" sql="select count(1) from cp_user_tab where IS_DEL='N' and CP_ID=#{session_company_id} and USER_CODE=#{USER_CODE}" ></property>
+	</validation>
+    <!-- 编辑角色时判断人员名是否存在 -->
+    <validation id="editUser">
+		<property field="USER_CODE" method="database" msg="用户名已存在" sql="select count(1) from cp_user_tab where USER_CODE=#{USER_CODE} and IS_DEL='N' and CP_ID=#{session_company_id} and USER_ID!=#{USER_ID}" ></property>
+	</validation>
+	<!-- 删除角色时判断人员名是否为系统管理员 -->
+    <validation id="delUser">
+		<property field="USER_CODE" method="database" msg="系统管理员不允许删除" sql="select count(1) from cp_user_tab where USER_ID=#{USER_ID} and IS_DEL='N' and CP_ID=#{session_company_id} and USER_CODE='admin'" ></property>
+	</validation>
+	<!-- 失效时判断人员名是否为系统管理员 -->
+    <validation id="invalidUser">
+		<property field="USER_CODE" method="database" msg="系统管理员不允许失效" sql="select count(1) from cp_user_tab where USER_ID=#{USER_ID} and IS_DEL='N' and CP_ID=#{session_company_id} and USER_CODE='admin'" ></property>
+	</validation>
+	<!--  -->
+	<validation id="validatePwd">
+	    <property field="validatePwd" method="database" msg="输入的旧密码错误" sql="select count(1) from ms_user_tab where USER_ID='$_CRU_USER_ID_$' AND USER_PWD!=md5(#{oldpwd}) "></property>
+	</validation>
+</validations>

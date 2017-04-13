@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mappers xmlns="http://www.weimingfj.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://itest.56913.com:20080/xsd/mappers.xsd">
+	<!-- 首页加载轮播图 -->
+	<mapper id="getBannerImgs">
+		<sql key="getBannerImgs" operator="select" resultType="list">
+			select pic_path,website from ad_cfg_tab where ad_type='QHJYPT' and pic_path!='' ORDER BY seq
+		</sql>
+	</mapper>
+	
+
+
+</mappers>
+

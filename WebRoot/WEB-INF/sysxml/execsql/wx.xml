@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mappers xmlns="http://www.weimingfj.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://itest.56913.com:20080/xsd/mappers.xsd">
+	<!-- 微信端-司机认证添加 -->
+	<mapper id="uploadDriverAudit">
+		<sql id="uploadDriverAudit" operator="execute">
+		    insert into auth_personal_tab (user_id,apply_source,apply_date,status,real_name,id_no,id_card_front,driver_lic_photo,type,phone)values
+		    ('$_CRU_USER_ID_$','8',now(),'D',#{real_name},#{id_no},#{id_card_front_f},#{driver_lic_photo_f},'2',#{tel})
+		</sql>	
+		<sql id="updateUserStatus" operator="execute">
+		    update sys_user_tab set user_auth_status='D' where user_id='$_CRU_USER_ID_$'
+		</sql>    
+	</mapper>
+	<!-- 微信端-企业认证添加 -->
+	<mapper id="uploadCompanyAudit">
+		<sql id="uploadCompanyAudit" operator="execute">
+		    insert into auth_company_tab (user_id,apply_source,apply_date,status,company_name,operate_lic_path,shop_photo_path)values
+		    ('$_CRU_USER_ID_$','8',now(),'D',#{company_name},#{operate_lic_path_f},#{driver_lic_photo_f})
+		</sql>
+		<sql id="uploadUserAudit" operator="execute">
+				insert into auth_personal_tab (user_id,apply_source,apply_date,status,real_name,id_card_front,phone)values
+		    	('$_CRU_USER_ID_$','8',now(),'D',#{real_name},#{id_card_front_f},#{tel}) 
+		</sql>
+		<sql id="uploadUserAuditStatus" operator="execute">
+		    update sys_user_tab set user_auth_status='D' where user_id='$_CRU_USER_ID_$'
+		</sql>
+		<sql id="updateCompanyStatus" operator="execute">
+		    update sys_user_tab set company_auth_status='D' where user_id='$_CRU_USER_ID_$'
+		</sql>    
+	</mapper>
+	<!-- 微信端-参与活动 -->
+	<mapper id="enterAct">
+		<sql id="enterAct" operator="execute">
+		    insert into activity_201509_old_new (new_mobile,old_user_id,status,join_date) values 
+		    (#{new_mobile},#{old_user_id},'0',now())
+		</sql>	
+	</mapper>
+	<!-- 微信端-用户注册 -->
+	<mapper id="registerForWX">
+	    <sql id="registerForWX" operator="execute">
+	        insert into sys_user_tab(user_id,user_pwd,user_code,tel,create_date,user_type) values 
+	        (#{user_id},SUBSTR(MD5(#{user_pwd}) FROM 9 FOR 16),#{user_code},#{tel},now(),'10')
+	    </sql>
+	</mapper>
+	<mapper id="queryExpress">
+		<sql key="queryExpress" operator="select" resultType="list" >  
+			select * from sys_express_tab where is_del='N'  		 
+	  	</sql>
+	</mapper>
+</mappers>
+

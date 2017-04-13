@@ -1,0 +1,58 @@
+* {
+	padding: 0;
+	margin: 0;
+	font-size: 14px;
+	font-family: Œ¢»Ì—≈∫⁄, 'Microsoft YaHei';
+}
+
+/* ø’––±Í ∂ */
+.wrap{
+	height: 25px;
+}
+
+.content {
+	margin: 0 auto;
+	width: 1000px;
+}
+
+.item {
+	position: relative;
+	width: 100%;
+}
+
+.index-item {
+	height: 430px;
+}
+
+.index-item .item-content {
+	position: absolute;
+	top: 43px;
+	width: 100%;
+}
+
+.item-img-right img {
+	float: right;
+}
+
+.index-item .item-info {
+	display: inline-block;
+	width: 482px;
+}
+
+.index-item .item-info .item-info-title {
+	margin-top: 20px;
+	margin-bottom: 20px;
+}
+
+.index-item .item-info .item-info-title span {
+	font-size: 23px;
+}
+
+.index-item .item-info .item-info-text p {
+	line-height: 1.75em;
+}
+
+.index-item .item-info .item-info-text span {
+	font-size: 13px;
+	line-height: 1.75;
+}

@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mappers xmlns="http://www.weimingfj.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://itest.56913.com:20080/xsd/mappers.xsd">
+	
+	<mapper id="exportReportList">
+	    <sql key="exportReportList" operator="select" resultType="list">
+	    	SELECT
+				t1.order_no,
+				t3.company,
+				t1.loading_addr,
+				t1.receive_addr,
+				t2.user_name driver_name,
+				if(t1.way_length like '%里%',t1.way_length,concat(t1.way_length,'km'))way_length,
+				concat(
+					IF (
+						HOUR (
+							TIMEDIFF(arrive_date, pick_date)
+						) > 0,
+						concat(
+							HOUR (
+								TIMEDIFF(arrive_date, pick_date)
+							),
+							'时'
+						),
+						''
+					),
+					IF (
+						MINUTE (
+							TIMEDIFF(arrive_date, pick_date)
+						) > 0,
+						concat(
+							MINUTE (
+								TIMEDIFF(arrive_date, pick_date)
+							),
+							'分'
+						),
+						''
+					),
+					IF (
+						SECOND (
+							TIMEDIFF(arrive_date, pick_date)
+						) > 0,
+						concat(
+							SECOND (
+								TIMEDIFF(arrive_date, pick_date)
+							),
+							'秒'
+						),
+						''
+					)
+				) pay_time,
+				CASE order_status
+			WHEN '3' THEN
+				'进行中'
+			WHEN '6' THEN
+				'结束'
+			ELSE
+				''
+			END order_status,
+			 date_format(pick_date, '%Y.%m.%d %H:%i') pick_date,
+			 date_format(
+				arrive_date,
+				'%Y.%m.%d %H:%i'
+			) arrive_date,
+			 case when fee is null or fee='' then '面议' else  fee end fee,
+			 remark,
+			
+			IF (
+				driver_sign_name_pic IS NULL
+				OR driver_sign_name_pic = '',
+				'否',
+				'是'
+			) is_order_back
+			FROM
+				transport_order_cargouser_tab t1
+			LEFT JOIN sys_user_tab t2 ON t1.driver_id = t2.user_id
+			LEFT JOIN sys_user_tab t3 ON t1.create_user_id = t3.user_id
+			WHERE
+				t1.order_status IN ('3', '6') AND t2.is_del = 'N'
+			<isNotEmpty property="order_no">
+				and t1.order_no like '%${order_no}%'
+			</isNotEmpty>
+			<isNotEmpty property="start_area">
+				and t1.loading_addr like '%${start_area}%'
+			</isNotEmpty>
+			<isNotEmpty property="end_area">
+				and t1.receive_addr like '%${end_area}%'
+			</isNotEmpty>
+			<isNotEmpty property="place_from_code">
+				and loading_code like  '${place_from_code}%'
+			</isNotEmpty>
+			<isNotEmpty property="place_to_code">
+				and receive_code like  '${place_to_code}%'
+			</isNotEmpty>
+			<isNotEmpty property="driver_name">
+				and t2.user_name like '%${driver_name}%'
+			</isNotEmpty>
+			<isNotEmpty property="company_name">
+				and t3.company like '%${company_name}%'
+			</isNotEmpty>
+			<isNotEmpty property="start_time_begin">
+				and  t1.pick_date>= concat(#{start_time_begin},' 00:00:00')
+			</isNotEmpty>
+			<isNotEmpty property="start_time_end">
+				and  t1.pick_date &lt;= concat(#{start_time_end},' 23:59:59')
+			</isNotEmpty>
+			<isNotEmpty property="end_time_begin">
+				and  t1.arrive_date>= concat(#{end_time_begin},' 00:00:00')
+			</isNotEmpty>
+			<isNotEmpty property="end_time_end">
+				and  t1.arrive_date &lt;= concat(#{end_time_end},' 23:59:59')
+			</isNotEmpty>
+			ORDER BY
+				t1.pick_date DESC
+	    	
+		</sql>
+	</mapper>
+
+	<!-- 获取报表图表统计数据 -->
+	<mapper id="getReportData">
+		<sql operator="select" resultType="list">
+			SELECT
+				yyyymm,
+				mm,
+				count(0) cargoCnt,
+			 sum(a.conver) conver
+			FROM
+				(
+					SELECT 
+						DATE_FORMAT(c.CREATE_TIME, '%Y年%m月') yyyymm,
+						month(c.CREATE_TIME) mm,
+						if(t.order_status='3'||t.order_status='6',1,0) conver
+					FROM
+						sys_cargo_tab c 
+					LEFT JOIN transport_order_cargouser_tab t on c.SEQ  = t.cargo_id 
+					WHERE
+						<isEmpty property="year">
+						c.CREATE_TIME BETWEEN '2016-01-01 00:00:00' and '2016-12-31 23:59:59'
+						</isEmpty>
+						<isNotEmpty property="year">
+						c.CREATE_TIME BETWEEN concat(#{year},'-01-01 00:00:00') and concat(#{year},'-12-31 23:59:59')
+						</isNotEmpty>
+				) a
+			
+			GROUP BY
+			 	yyyymm
+			ORDER BY
+				yyyymm
+		</sql>
+	</mapper>
+</mappers>
+

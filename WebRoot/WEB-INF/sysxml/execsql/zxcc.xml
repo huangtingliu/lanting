@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mappers xmlns="http://www.weimingfj.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://itest.56913.com:20080/xsd/mappers.xsd">
+	<mapper id="load_line_truck_info">
+		<sql key="load_line_truck_info" operator="select" resultType="paging">
+			SELECT <isNotEmpty property="query_count"> count(1) </isNotEmpty>
+<isEmpty property="query_count">
+DISTINCT(CONCAT_WS('',aa.TRUCK_PLATE, aa.TRUCK_PLATE_COLOR)) as d,
+aa.DRIVER_NAME,aa.DRIVER_TEL,
+if(aa.loc_way_from='2',aa.CONTACTS,if(bb_truck_id is null,ifnull(d.contact,aa.CONTACTS),aa.CONTACTS)) CONTACTS,
+if(aa.loc_way_from='2',aa.CONTACT_TEL,if(bb_truck_id is null,ifnull(d.contact_tel,aa.CONTACT_TEL),aa.CONTACT_TEL)) contact_tel,
+aa.LAST_LOC_ADDR,aa.LAST_LOC_TIME_FORMAT,aa.OFTEN_RUN_AREA,aa.LOC_WAY_FROM,aa.WAY_FROM,
+aa.LAST_LOC_LNG,aa.LAST_LOC_LAT,aa.TRUCK_ID,aa.truck_type,aa.truck_length,aa.TRUCK_TON,aa.TRUCK_PLATE,aa.TRUCK_PLATE_COLOR,
+yl.yl_id,yl.YL_SOURCE,yl.DESTINATION,DATE_FORMAT(yl.END_DATE,'%Y-%m-%d') END_DATE,DATE_FORMAT(yl.START_DATE,'%Y-%m-%d') START_DATE,yl.YL_DATE,( select  count(1) from collect where 1=1 and member_id='$_CRU_USER_ID_$' 
+and collect_type=3 and collect_id=aa.TRUCK_ID ) as TYPE,if(is_vip='1','1','0') viptype,
+(select count(1) from yb_vip_user_today_his yvut where yvut.userid='$_CRU_USER_ID_$' and yvut.code='ZXCC' and yvut.object_id=aa.TRUCK_ID and source='WEB') isshow   
+FROM (
+SELECT 	DATE_FORMAT(tt.LAST_LOC_TIME,'%m-%d %H:%i') LAST_LOC_TIME_FORMAT,
+			tt.LAST_LOC_TIME, 
+			tt.TRUCK_PLATE,
+			tt.TRUCK_PLATE_COLOR,
+			tt.TRUCK_ID,
+			tt.DRIVER_NAME,
+			tt.DRIVER_TEL,
+			tt.LOC_WAY_FROM,
+			tt.CONTACTS,
+			tt.CONTACT_TEL,
+			tt.LAST_LOC_ADDR,bb.truck_id bb_truck_id,
+			if(vip.userid is null,'0','1') is_vip,
+tt.OFTEN_RUN_AREA,tt.WAY_FROM,tt.LAST_LOC_LNG,tt.LAST_LOC_LAT,tt.TRUCK_TYPE,tt.TRUCK_LENGTH,tt.TRUCK_TON 
+</isEmpty>
+FROM `sys_truck_tab` tt 
+left join sys_user_tab bb on tt.DRIVER_TEL = bb.tel and bb.is_del = 'N'
+LEFT JOIN(SELECT userid FROM sys_user_vip WHERE vip_type IN(1, 2) GROUP BY userid )vip ON vip.userid = bb.user_id 
+WHERE tt.is_delete!=1 and tt.WAY_FROM !='0' and
+ (tt.AUTH_STATUS='2' or (tt.AUTH_STATUS='0' and <![CDATA[ timestampdiff(hour,tt.LAST_LOC_TIME, now()) < 24 ]]>) )
+	AND tt.LAST_LOC_LNG IS NOT NULL  
+	AND tt.LAST_LOC_LAT IS NOT NULL 
+	AND tt.LAST_LOC_ADDR is not null  and tt.LAST_LOC_ADDR !=''  
+	<isNotEmpty property="vip_type">  
+	<isEqual property="vip_type" compareValue="1"> 
+	   and bb.is_vip = '1'   
+	</isEqual>
+	<isEqual property="vip_type" compareValue="0"> 
+	  and  (bb.is_vip is null or bb.is_vip='0') 
+	</isEqual>
+</isNotEmpty>
+	<isNotEmpty property="purpose">  
+  	AND tt.LAST_LOC_ADDR LIKE '%${purpose}%' 
+	</isNotEmpty>
+	<isNotEmpty property="phone">  
+  	AND tt.CONTACT_TEL LIKE '%${phone}%' 
+	</isNotEmpty>
+	<isNotEmpty property="prov">  
+  	AND tt.LAST_LOC_ADDR LIKE '${prov}%' 
+	</isNotEmpty>
+<isNotEmpty property="city">  
+  	AND tt.LAST_LOC_ADDR LIKE '%${city}%' 
+	</isNotEmpty>
+<isNotEmpty property="town">  
+  	AND tt.LAST_LOC_ADDR LIKE '%${town}%' 
+	</isNotEmpty>
+	<isNotEmpty property="prov1">  
+  	AND tt.TRUCK_PLATE LIKE 
+  		CONCAT('%',( SELECT 
+  		<isNotEmpty property="isOnlyProv">
+  			 DISTINCT LEFT(SCAT.CP_NAME,1)  
+  		 </isNotEmpty>
+  		 <isEmpty property="isOnlyProv">
+  		 	SCAT.CP_NAME 
+  		 </isEmpty>
+  		 FROM sys_cp_area_tab SCAT 
+  		 WHERE  SCAT.PROVINCE LIKE '%${prov1}%' 
+  		 <isNotEmpty property="city1"> 
+  		 AND SCAT.CITY LIKE '%${city1}%' 
+  		 </isNotEmpty>
+  		 ),'%')  
+	</isNotEmpty>
+	<isNotEmpty property="WAY_FROM">  
+  	AND tt.LOC_WAY_FROM IN (${WAY_FROM}) 
+	</isNotEmpty>
+	<isNotEmpty property="TRUCK_PLATE">  
+  	AND tt.TRUCK_PLATE LIKE '%${TRUCK_PLATE}%' 
+	</isNotEmpty>
+	
+	<isNotEmpty property="TRUCK_LENGTH">  
+  	AND tt.TRUCK_LENGTH = '${TRUCK_LENGTH}' 
+	</isNotEmpty>
+<isNotEmpty property="TRUCK_LOAD">  
+  	AND tt.TRUCK_TON = '${TRUCK_LOAD}' 
+	</isNotEmpty>
+<isNotEmpty property="TRUCK_TYPE">  
+  	AND tt.TRUCK_TYPE = '${TRUCK_TYPE}' 
+	</isNotEmpty>
+<isEmpty property="query_count">
+	ORDER BY tt.LAST_LOC_TIME DESC  
+  LIMIT  ${PAGESTART}, ${PAGENUM} 
+</isEmpty>
+<isEmpty property="query_count">
+	) aa 
+LEFT JOIN (select t.TRUCK_PLATE,
+		t.TRUCK_PLATE_COLOR,
+		t.YL_ID,
+		t.YL_SOURCE,
+		t.DESTINATION,
+		t.END_DATE,
+	t.START_DATE,
+t.YL_DATE  from(select TRUCK_PLATE,MAX(t.ADD_TIME) ADD_TIME from yl_tab t where t.IS_DELETE='N' and VALID=1 and t.end_date >= now() and t.TRUCK_PLATE is not null and t.TRUCK_PLATE!=''GROUP by TRUCK_PLATE) a  	  left join yl_tab t on a.TRUCK_PLATE=t.TRUCK_PLATE and a.ADD_TIME=t.ADD_TIME) yl on aa.TRUCK_PLATE=yl.TRUCK_PLATE and aa.TRUCK_PLATE_COLOR=yl.TRUCK_PLATE_COLOR 
+left join truck_park_tab d on d.truck_plate=aa.TRUCK_PLATE   
+ORDER BY aa.LAST_LOC_TIME DESC 
+</isEmpty>
+		</sql>
+	</mapper>
+	
+	<mapper id="select_all_prov">
+  <sql key="select_all_prov"  resultType="list" operator="select">
+		select DISTINCT province, SUBSTR(cp_name,1,1) cp_name  from sys_cp_area_tab   order by pin_yin
+	</sql>
+</mapper>
+
+<mapper id="select_all_city">
+  <sql key="select_all_city" resultType="list" operator="select">
+		select city,  cp_name  from sys_cp_area_tab sc  where province='${P_NAME}' order by pin_yin
+	</sql>
+</mapper>
+</mappers>

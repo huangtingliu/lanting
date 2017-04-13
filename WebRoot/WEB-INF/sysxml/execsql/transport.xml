@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mappers xmlns="http://www.weimingfj.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://itest.56913.com:20080/xsd/mappers.xsd">
+
+	<mapper id="loadTransport">
+		<sql key="msginstall_tab" sqlType="query" resultType="paging"
+			operator="select" dynamic="true">
+			<isEmpty property="query_count">select * from(</isEmpty>
+			SELECT
+			<isNotEmpty property="query_count"> count(1) </isNotEmpty>
+			<isEmpty property="query_count">
+				ot.order_id,
+				ot.driver_id,
+				ot.order_no,
+				ot.reason,
+				ot.is_sign,
+				ot.cargo_name,
+				ot.cargo_size,
+				ot.cargo_size_type,
+				ot.receive_code,
+				DATE_FORMAT(ot.arrive_date,'%m-%d') arrive_date,
+				ot.fee,
+				ot.loading_code,
+				ot.order_status,
+				su.user_name,
+				su.tel,
+				st.TRUCK_PLATE
+			</isEmpty>
+			FROM
+			`transport_order_tab` ot
+			LEFT JOIN sys_user_tab su ON ot.driver_id
+			= su.user_id
+			LEFT JOIN sys_truck_tab st on su.truck_id=st.TRUCK_ID
+			where 1=1 and ot.create_user_id='$_CRU_USER_ID_$'and ot.is_del='N'
+			<isNotEmpty property="ORDER_STATUS">
+				and ot.order_status=#{ORDER_STATUS}
+			</isNotEmpty>
+			<isNotEmpty property="TRUCK_PLATE">
+				and st.TRUCK_PLATE
+				like'%${TRUCK_PLATE}%'
+			</isNotEmpty>
+			<isNotEmpty property="ORDER_NO">
+				and ot.ORDER_NO like'%${ORDER_NO}%'
+			</isNotEmpty>
+			<isNotEmpty property="USER_NAME">
+				and su.user_name like'%${USER_NAME}%'
+			</isNotEmpty>
+			<isNotEmpty property="TEL">
+				and su.tel like'%${TEL}%'
+			</isNotEmpty>
+			<isEmpty property="query_count">
+				order by ot.create_date desc
+				<isNotEmpty property="pager">
+					LIMIT ${PAGESTART}, ${PAGENUM}
+				</isNotEmpty>
+				)a
+			</isEmpty>
+		</sql>
+	</mapper>
+
+	<mapper id="valideOrderNO">
+		<sql key="select_GPS" sqlType="query" resultType="map" dynamic="false"
+			operator="select">
+			select count(1) orderCount from transport_order_tab where
+			ORDER_NO=#{ORDER_NO} and is_del='N' and create_user_id
+			='$_CRU_USER_ID_$'
+			<isNotEmpty property="ID">
+				and order_id!=#{ID}
+			</isNotEmpty>
+		</sql>
+	</mapper>
+
+	<mapper id="addTransportServic">
+		<sql key="msginstall_tab" operator="execute">
+			INSERT INTO
+			`transport_order_tab`
+			(ORDER_ID,DRIVER_ID,REMARK,FEE,ARRIVE_DATE,RECEIVE_ADDR,RECEIVE_CODE,CONSIGNEE_TEL,CONSIGNEE,LOADING_ADDR,LOADING_CODE,CONSIGNOR_TEL,CONSIGNOR,CARGO_SIZE_TYPE,CARGO_SIZE,CARGO_NAME,ORDER_NO,create_user_id,create_date,order_status)
+			VALUES
+			(#{ORDER_ID},#{userId},#{REMARK},#{FEE},#{ARRIVE_DATE},#{RECEIVE_ADDR},#{RECEIVE_CODE},#{CONSIGNEE_TEL},#{CONSIGNEE},#{LOADING_ADDR},#{LOADING_CODE},#{CONSIGNOR_TEL},#{CONSIGNOR},#{CARGO_SIZE_TYPE},#{CARGO_SIZE},#{CARGO_NAME},#{ORDER_NO},'$_CRU_USER_ID_$',now(),'0')
+		</sql>
+		<sql operator="callback" class="pointsCallBack" />
+	</mapper>
+
+	<mapper id="updateTransportServic">
+		<sql key="msginstall_tab" operator="execute">
+			update transport_order_tab set
+			DRIVER_ID=#{userId},REMARK=#{REMARK},FEE=#{FEE},ARRIVE_DATE=#{ARRIVE_DATE},
+			RECEIVE_ADDR=#{RECEIVE_ADDR},RECEIVE_CODE=#{RECEIVE_CODE},CONSIGNEE_TEL=#{CONSIGNEE_TEL},CONSIGNEE=#{CONSIGNEE},LOADING_ADDR=#{LOADING_ADDR}
+			,LOADING_CODE=#{LOADING_CODE},CONSIGNOR_TEL=#{CONSIGNOR_TEL},CONSIGNOR=#{CONSIGNOR},CARGO_SIZE_TYPE=#{CARGO_SIZE_TYPE},CARGO_NAME=#{CARGO_NAME},ORDER_NO=#{ORDER_NO}
+			<isNotEmpty property="status">
+				<isEqual property="status" compareValue="2">
+					,order_status='0'
+				</isEqual>
+			</isNotEmpty>
+			where order_id=#{id}
+		</sql>
+	</mapper>
+
+	<mapper id="removeTransport">
+		<sql key="msginstall_tab" operator="execute">
+			update transport_order_tab set is_del='Y',del_date=now() where
+			order_id=#{id}
+		</sql>
+	</mapper>
+
+	<mapper id="endTransport">
+		<sql key="msginstall_tab"  operator="execute">
+			update transport_order_tab set order_status='6' where order_id=#{id}
+	   </sql>
+	</mapper>
+	
+	<mapper id="getImgPath">
+		<sql key="msginstall_tab" sqlType="query" resultType="list" operator="select" dysql="true">
+			select pic1,pic2,pic3,title from transport_order_proc_tab where 1=1  
+		   		and order_id=#{id} order by report_date desc
+		</sql>
+	</mapper>
+	<mapper id = "msginstall_tab">
+		<sql key="msginstall_tab" sqlType="query" resultType="map" operator="select" >
+			select a.user_name,a.tel,b.TRUCK_PLATE,b.TRUCK_LENGTH,b.TRUCK_TON,TRUCK_TYPE from sys_user_tab a LEFT JOIN sys_truck_tab b on a.truck_id=b.TRUCK_ID where a.user_id=#{id}
+		</sql>
+	</mapper>
+	
+	<mapper id="orderIsExist">
+		<sql operator="select" resultType="string">
+			select count(1) from transport_order_cargouser_tab where order_no =#{orderNo} and is_del='N'
+		</sql>
+	</mapper>
+</mappers>
+
