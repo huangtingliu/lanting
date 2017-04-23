@@ -1,0 +1,74 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="${resRoot}/css/style.css">
+    <title>汕头市兰亭茶业有限公司</title>
+    <script type="text/javascript" src="${resRoot}/js/jquery-1.7.2.min.js"></script>
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=67jMQ5DmYTe1TLMBKFUTcZAR"></script>
+    <style type="text/css">
+        body{margin: 0; padding: 0; font:12px/1 "Microsoft Yahei", "微软雅黑", sans-serif;}
+        p, span {
+        font-family: 'Microsoft Yahei'!important;
+        }
+        .mapDiv p {height: 30px;width: 250px;}
+    </style>
+	<script type="text/javascript">
+		resRoot = '${resRoot}';
+	</script>
+</head>
+<body>
+     <div id="header_container"></div>
+        <div class="contact_main">
+        	<div id="map" class="map">
+        	    <div style="width: 500px; height: 300px;" id="allmap"></div>
+        	</div>
+            <div class="information">
+                <p><span style="font-size: 14px; line-height: 3em;">电话：<span style="line-height: 21px; font-size: 24px; color: rgb(71, 177, 76);">086-0754-89625363</span></span></p>
+                <p><span style="font-size: 14px; line-height: 3em;">汕头市兰亭茶业有限公司</span></p>
+                <p><span style="font-size: 14px; line-height: 3em;">地址：汕头市潮南区峡山街道沙溪丹凤路467至489号第四层</span></p>
+                <p><span style="font-size: 14px; line-height: 3em;">网址：http://www.lantingchaye.com</span></p>
+                <p><span style="font-size: 14px; line-height: 3em;">邮箱：553171040@qq.com</span></p>
+            </div>
+        </div>
+
+    <iframe  src="footer"  scrolling="no" frameborder="0" width="100%" height="53px" style="margin:0px; padding:0px; margin-bottom:-5px;"></iframe>
+</body>
+</html>
+<script type="text/javascript" src="${resRoot}/js/header.js"></script>
+<script type="text/javascript">
+    $(function () {
+        ShowMap('116.428313,23.239572', '汕头市兰亭茶业有限公司', '汕头市潮南区峡山街道沙溪丹凤路467至489号第四层', '086-0754-89625363', '', '14');
+    })
+    function getInfo(id) {
+        $.ajax({
+            type: "POST",
+            url: "WebUserControl/Contact/GetInfo.ashx",
+            cache: false,
+            async: false,
+            data: { ID: id },
+            success: function (data) {
+                data = eval(data);
+                var length = data.length;
+                if (length > 0) {
+                    ShowMap(data[0]["Image"], data[0]["NewsTitle"], data[0]["Address"], data[0]["Phone"], data[0]["NewsTags"], data[0]["NewsNum"]);
+                }
+            }
+        });
+    }
+    function ShowMap(zuobiao, name, addrsee, phone, chuanzhen, zoom) {
+        var arrzuobiao = zuobiao.split(',');
+        var map = new BMap.Map("allmap");
+        map.enableScrollWheelZoom(true);     //开启鼠标滚轮缩放
+        map.centerAndZoom(new BMap.Point(arrzuobiao[0], arrzuobiao[1]), zoom);
+        map.addControl(new BMap.NavigationControl());
+        var marker = new BMap.Marker(new BMap.Point(arrzuobiao[0], arrzuobiao[1]));
+        map.addOverlay(marker);
+        var infoWindow = new BMap.InfoWindow('<div class="mapDiv"><p style="color: #bf0008;font-size:14px;">' + name + '</p><p>地址：' + addrsee + '</p><p>电话：' + phone + '</p></div>');
+        marker.addEventListener("click", function () {
+            this.openInfoWindow(infoWindow);
+        });
+        marker.openInfoWindow(infoWindow);
+    }
+</script>

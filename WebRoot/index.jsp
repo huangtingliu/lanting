@@ -21,6 +21,8 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
   </head>
   
   <body>
-    <jsp:forward page="/WEB-INF/jsp/index.jsp"></jsp:forward>
   </body>
+  <script>
+  	window.location.href="${ctxPath}/page/index";
+  </script>
 </html>

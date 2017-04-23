@@ -1,0 +1,174 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<link rel="stylesheet" type="text/css" href="${resRoot}/css/style.css">
+<title>汕头市兰亭茶业有限公司</title>
+<script type="text/javascript">
+	resRoot = '${resRoot}';
+</script>
+</head>
+<body>
+     <!-- <iframe id="headeriframe" src="header.html"  scrolling="no" frameborder="0" width="100%" height="735"></iframe> -->
+     <div id="header_container"></div>
+		<div class="product_display">
+			<!-- <ul class="menu">
+				<a href="#:"><li>产品分类1</li></a>
+				<a href="#:"><li>产品分类2</li></a>
+				<a href="#:"><li>产品分类3</li></a>
+				<a href="#:"><li>产品分类4</li></a>
+			</ul> -->
+			<h2 class="product_title" style="color: rgb(110, 110, 110); text-align: center;">茶叶展示</h2>
+			<hr/>
+			<div class="product" id="product">
+				
+			</div>
+			<div class="page_box"> 
+				<div class="page" id="page">
+					<a href="#:" id="rpbtn" >上一页</a>
+					<ul class="page_number" id="page_number">
+
+					</ul> 
+					<a href="#:" id="npbtn">下一页</a>
+				</div>
+       		</div>
+
+		</div>
+	 <iframe  src="footer"  scrolling="no" frameborder="0" width="100%" height="53px" style="margin:0px; padding:0px; margin-bottom:-5px;"></iframe>
+<script type="text/javascript" src="${resRoot}/js/jquery-1.7.2.min.js"></script>
+<script type="text/javascript" src="${resRoot}/js/header.js"></script>
+<script type="text/javascript">
+	// var list = [
+	// 	{productName:'博彩鸡肉卷1',productDesc:'那日在电视上看有大厨在做菠菜鸡肉卷',url:'images/product1.png'},
+	// 	{productName:'博彩鸡肉卷',productDesc:'那日在电视上看有大厨在做菠菜鸡肉卷',url:'images/product1.png'},
+	// 	{productName:'博彩鸡肉卷',productDesc:'那日在电视上看有大厨在做菠菜鸡肉卷',url:'images/product1.png'},
+	// 	{productName:'博彩鸡肉卷',productDesc:'那日在电视上看有大厨在做菠菜鸡肉卷',url:'images/product1.png'},
+	// 	{productName:'博彩鸡肉卷',productDesc:'那日在电视上看有大厨在做菠菜鸡肉卷',url:'images/product1.png'},
+	// 	{productName:'博彩鸡肉卷',productDesc:'那日在电视上看有大厨在做菠菜鸡肉卷',url:'images/product1.png'},
+	// 	{productName:'博彩鸡肉卷',productDesc:'那日在电视上看有大厨在做菠菜鸡肉卷',url:'images/product1.png'},
+	// 	{productName:'博彩鸡肉卷',productDesc:'那日在电视上看有大厨在做菠菜鸡肉卷',url:'images/product1.png'}
+	// ];
+	// var res = {
+	// 	total:9,
+	// 	list:list
+	// };
+	// var page_num = 8;
+	// var page = 1;
+	var total=0;
+function getdata(page){
+	$.ajax({
+		url:'${ctxPath}/webImg/list',
+		type:'POST',
+		data:{IMG_TYPE:2,page_num:8,page:page},
+		dataType:'json',
+		success:function(res){
+			//function getdata(){
+			//console.log(res);
+			total=res.total;
+			var Oul = document.createElement('ul');
+			var product = document.getElementById("product");
+			product.innerHTML='';
+			product.appendChild(Oul); 
+			console.log(res);
+			Oul.innerHTML='';
+			for (var i = 0; i < res.list.length; i++) {
+				Oul.innerHTML+='<a href="">'
+				+'<li>'
+				+'<div class="product_img_container">'
+				+'		<img class="product_img" src="${ctxPath}/file'+res.list[i].IMG_PATH+'" />'
+				+'	</div>'
+				+'	<p class="product_name">'+res.list[i].IMG_NAME+'</p>'
+				+'	<p class="product_introduction">'+res.list[i].IMG_DESC+'</p>'
+				+'</li>'
+				+'</a>'
+			};
+				
+			
+			var page_number = document.getElementById("page_number");
+			var page_div = document.getElementById("page");
+			
+			page_div.style.width = (148+(38*(parseInt(res.total/8)+1)))+'px';
+			page_div.style.left = (1000/2-((136+(38*(parseInt(res.total/8)+1)))/2))+'px';
+			page_number.innerHTML='';
+			for(var i=0 ; i<=parseInt(res.total/8); i++){
+
+				page_number.innerHTML+='<a href="#:" id="a'+(i+1)+'" onclick="changePage('+(i+1)+')"><li>'+(i+1)+'</li></a>'
+			}
+			
+			
+			$("#rpbtn").attr('page',page);
+			$("#npbtn").attr('page',page);
+		$("#page_number #a"+page).addClass('active');
+		}
+
+		//}
+	})
+
+}
+$(document).ready(function() {    //调用AJAX
+	changePage(1);
+});
+
+
+
+
+	window.onload=function(){
+
+		
+		var page_li = page_number.getElementsByTagName('li'); 
+		var rpbtn= document.getElementById("rpbtn");
+		var npbtn = document.getElementById("npbtn");
+		rpbtn.onclick=function(){
+			var front=$(this).attr('page');
+				if(front==1){
+					front=1;
+				}else{
+					front--;
+				}
+			//console.log(page);
+				changePage(front);
+
+			}
+		npbtn.onclick=function(){
+			var back=$(this).attr('page');
+			if(back==(parseInt(total/8)+1)){
+				back=(parseInt(total/8)+1);
+			}else{
+				back++;
+			}
+			changePage(back);
+		}
+		
+		
+		$(".menu a li").click(function(){
+			//alert("1111");
+			//var currentNum = $(".menu a li").index(this);
+			$(this).addClass('active').parent().siblings().find("li").removeClass('active');
+
+		})
+		$('')
+		
+		//getdata();
+
+	}
+
+	function changePage(p){
+		//var currentPage = document.getElementById("a"+p);
+		//var page_number = document.getElementById("page_number");
+		//var page_number_a= page_number.getElementsByTagName("a");
+
+		getdata(p);
+		
+		
+		
+
+
+		}
+	
+	
+
+</script>
+</body>
+</html>

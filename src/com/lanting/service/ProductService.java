@@ -1,5 +1,6 @@
 package com.lanting.service;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -15,8 +16,12 @@ public class ProductService {
 	ProductDao productDao;
 	
 	
-	public List<Map<String,Object>> list(){
-		
-		return productDao.list();
+	public Map<String,Object> list(Map<String,Object> param){
+		List<Map<String, Object>> list = productDao.list(param);
+		int total = productDao.count(param);
+		Map<String,Object> result = new HashMap<String, Object>();
+		result.put("list", list);
+		result.put("total", total);
+		return result;
 	}
 }

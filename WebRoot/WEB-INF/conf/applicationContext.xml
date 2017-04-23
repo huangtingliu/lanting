@@ -14,7 +14,7 @@
     http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd">
 
 <!-- 	<jee:jndi-lookup id="dataSource" jndi-name="jdbc/JYT_WEB" />  -->
-	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+	<!-- <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
 		<property name="driverClassName" value="com.mysql.jdbc.Driver"></property>
 		<property name="url" value="jdbc:mysql://localhost:3306/lanting?useUnicode=true&amp;characterEncoding=utf-8&amp;"></property>
 		<property name="username" value="root"></property>
@@ -22,9 +22,9 @@
 		<property name="maxIdle" value="5" />
 		<property name="maxWait" value="100" />
 		<property name="maxActive" value="20" />
-	</bean>
+	</bean> -->
 	<!-- 阿里云 -->
-	<!-- <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
 		<property name="driverClassName" value="com.mysql.jdbc.Driver"></property>
 		<property name="url" value="jdbc:mysql://localhost:3306/lanting?useUnicode=true&amp;characterEncoding=utf-8&amp;"></property>
 		<property name="username" value="root"></property>
@@ -32,7 +32,7 @@
 		<property name="maxIdle" value="5" />
 		<property name="maxWait" value="100" />
 		<property name="maxActive" value="20" />
-	</bean> -->
+	</bean>
 	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
 		<property name="dataSource" ref="dataSource"></property>
 	</bean>
